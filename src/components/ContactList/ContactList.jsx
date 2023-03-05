@@ -1,15 +1,25 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { selectContacts, selectFilter } from 'redux/contacts/selectors';
 import { Button, ListItem } from './ContactList.styled';
-import { deleteContact } from 'redux/contacts/operations';
+import { deleteContact, getContacts } from 'redux/contacts/operations';
+import { useEffect } from 'react';
+import { selectIsLoggedIn } from 'redux/users/selectors';
+
 
 const ContactList = () => {
   const contacts = useSelector(selectContacts);
   const filter = useSelector(selectFilter);
+  const isLoggedIn = useSelector(selectIsLoggedIn)
   const dispatch = useDispatch();
 
-  const deleteContacts = id => {
-    dispatch(deleteContact(id));
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    dispatch(getContacts());
+  }, [isLoggedIn, dispatch]);
+
+  const deleteContacts = contactId => {
+    dispatch(deleteContact(contactId));
   };
 
   const visibleContacts = contacts.filter(contact =>
@@ -22,7 +32,7 @@ const ContactList = () => {
         {visibleContacts.map(contact => {
           return (
             <ListItem key={contact.id}>
-              {contact.name}: {contact.number}
+              {contact.name}:  {contact.number}
               <Button type="button" onClick={() => deleteContacts(contact.id)}>
                 Delete
               </Button>
@@ -31,7 +41,7 @@ const ContactList = () => {
         })}
       </ul>
       {contacts.length !== 0 && visibleContacts.length === 0 && (
-        <p>Contact wasn't found.</p>
+        <p style={{fontSize: 24, color: '#da391d'}}>Contact wasn't found.</p>
       )}
     </>
   );

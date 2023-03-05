@@ -1,38 +1,82 @@
-import React, { useEffect } from 'react';
-import ContactForm from './ContactForm/ContactForm';
-import Section from './Section/Section';
-import ContactList from './ContactList/ContactList';
-import Filter from './Filter/Filter';
-import { Container } from './App.Stuled';
+import React, { useEffect, lazy, Suspense } from 'react';
+import { Routes, Route, NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectContacts, selectLoading } from 'redux/contacts/selectors';
-import { getContacts } from 'redux/contacts/operations';
+import { toast } from 'react-toastify';
+import { selectError } from 'redux/contacts/selectors';
+import { getCurrentUserRequest, logOutRequest } from 'redux/users/operations';
+import { selectIsLoggedIn, selectUserData } from 'redux/users/selectors';
 import { Loader } from './Loader/Loader';
+import { Toast } from './Toast/Toast';
+import { UserMenu, Navigation, Header, StyledNavLink, Email, Button } from './App.Stuled';
+
+
+const HomePage = lazy(() => import('pages/Home/Home'));
+const ContactsPage = lazy(() => import('pages/Contacts/Contacts'));
+const SignUpPage = lazy(() => import('pages/SignUp/SignUp'));
+const SignInPage = lazy(() => import('pages/SignIn/SignIn'));
 
 export const App = () => {
-  const contacts = useSelector(selectContacts);
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const userData = useSelector(selectUserData);
+  const error = useSelector(selectError);
+
   const dispatch = useDispatch();
-  const loading = useSelector(selectLoading);
 
   useEffect(() => {
-    dispatch(getContacts());
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    dispatch(getCurrentUserRequest());
   }, [dispatch]);
+
+  const handleLogOut = () => {
+    dispatch(logOutRequest());
+  };
+
+  useEffect(() => {
+    if (error) {
+      toast('Oops. Something went wrong');
+    }
+  }, [error]);
 
   return (
     <>
-      <Container>
-        <Section title="Phonebook">
-          <ContactForm />
-        </Section>
-        <Section title="Contacts">
-          {contacts.length !== 0 && <Filter />}
-          <ContactList />
-          {contacts.length === 0 && !loading && (
-            <p>There are no contacts yet.</p>
-          )}
-        </Section>
-      </Container>
-      {contacts.length === 0 && loading && <Loader />}
+        <Header>
+          <nav>
+            {isLoggedIn ? (
+              <>
+                <Navigation>
+                  <StyledNavLink to="/">Home</StyledNavLink>
+                  <StyledNavLink to="/contacts">Contacts</StyledNavLink>
+                  <UserMenu>
+                    <Email>{userData.email}</Email>
+                    <Button onClick={handleLogOut}>Logout 🚪</Button>
+                  </UserMenu>
+                </Navigation>
+              </>
+            ) : (
+              <>
+              <Navigation>
+                <StyledNavLink to="/">Home</StyledNavLink>
+                <StyledNavLink to="/sign-in">Sign In</StyledNavLink>
+                <StyledNavLink to="/sign-up">Sign Up</StyledNavLink>
+                </Navigation>
+              </>
+            )}
+          </nav>
+        </Header>
+        <main>
+          <Suspense fallback={<Loader />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/contacts" element={<ContactsPage />} />
+              <Route path="/sign-in" element={<SignInPage />} />
+              <Route path="/sign-up" element={<SignUpPage />} />
+              <Route path="*" element={<NavLink to="/" />} />
+            </Routes>
+          </Suspense>
+        </main>
+        <Toast />
     </>
   );
 };

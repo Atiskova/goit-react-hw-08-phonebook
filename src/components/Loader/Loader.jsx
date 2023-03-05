@@ -5,7 +5,7 @@ export const Loader = () => {
   return (
     <Wrapper>
       <RotatingLines
-        strokeColor="#3f51b5"
+        strokeColor="#e08f43"
         strokeWidth="5"
         animationDuration="0.75"
         width="90"
